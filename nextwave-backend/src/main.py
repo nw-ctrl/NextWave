@@ -16,6 +16,7 @@ from .models.document import Document
 from .models.image import ImageAnalysis
 from .models.workflow import WorkflowModel
 from .models.processing import ProcessingTask, Report
+from .models.contact import ContactSubmission
 from .utils.pdf_processor import PDFProcessor
 from .utils.image_analyzer import ImageAnalyzer
 from .utils.workflow_engine_simple import WorkflowEngine
@@ -596,6 +597,130 @@ def download_report(report_id):
     except Exception as e:
         logger.error(f"Download report error: {str(e)}")
         return jsonify({'error': 'Failed to download report'}), 500
+
+# Contact Form Routes
+@app.route('/api/contact', methods=['POST'])
+def submit_contact_form():
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['name', 'email', 'subject', 'message']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field.capitalize()} is required'}), 400
+        
+        # Create contact submission
+        contact = ContactSubmission(
+            name=data.get('name'),
+            email=data.get('email'),
+            subject=data.get('subject'),
+            message=data.get('message'),
+            phone=data.get('phone'),
+            company=data.get('company'),
+            service_type=data.get('service_type'),
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent')
+        )
+        
+        db.session.add(contact)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Contact form submitted successfully',
+            'id': contact.id
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"Contact form submission error: {str(e)}")
+        return jsonify({'error': 'Failed to submit contact form'}), 500
+
+@app.route('/api/admin/contacts', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_contact_submissions():
+    try:
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        status = request.args.get('status')
+        
+        query = ContactSubmission.query
+        
+        if status:
+            query = query.filter(ContactSubmission.status == status)
+        
+        contacts = query.order_by(ContactSubmission.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        return jsonify({
+            'contacts': [contact.to_dict() for contact in contacts.items],
+            'total': contacts.total,
+            'pages': contacts.pages,
+            'current_page': page,
+            'per_page': per_page
+        })
+        
+    except Exception as e:
+        logger.error(f"Get contact submissions error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve contact submissions'}), 500
+
+@app.route('/api/admin/contacts/<int:contact_id>', methods=['GET'])
+@jwt_required()
+@admin_required
+def get_contact_submission(contact_id):
+    try:
+        contact = ContactSubmission.query.get_or_404(contact_id)
+        return jsonify(contact.to_dict())
+        
+    except Exception as e:
+        logger.error(f"Get contact submission error: {str(e)}")
+        return jsonify({'error': 'Failed to retrieve contact submission'}), 500
+
+@app.route('/api/admin/contacts/<int:contact_id>', methods=['PUT'])
+@jwt_required()
+@admin_required
+def update_contact_submission(contact_id):
+    try:
+        contact = ContactSubmission.query.get_or_404(contact_id)
+        data = request.get_json()
+        
+        # Update allowed fields
+        if 'status' in data:
+            contact.status = data['status']
+        if 'priority' in data:
+            contact.priority = data['priority']
+        if 'notes' in data:
+            contact.notes = data['notes']
+        if 'responded_at' in data and data['responded_at']:
+            contact.responded_at = datetime.utcnow()
+        
+        contact.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Contact submission updated successfully',
+            'contact': contact.to_dict()
+        })
+        
+    except Exception as e:
+        logger.error(f"Update contact submission error: {str(e)}")
+        return jsonify({'error': 'Failed to update contact submission'}), 500
+
+@app.route('/api/admin/contacts/<int:contact_id>', methods=['DELETE'])
+@jwt_required()
+@admin_required
+def delete_contact_submission(contact_id):
+    try:
+        contact = ContactSubmission.query.get_or_404(contact_id)
+        db.session.delete(contact)
+        db.session.commit()
+        
+        return jsonify({'message': 'Contact submission deleted successfully'})
+        
+    except Exception as e:
+        logger.error(f"Delete contact submission error: {str(e)}")
+        return jsonify({'error': 'Failed to delete contact submission'}), 500
 
 # Initialize database and create sample data
 @app.before_request
