@@ -13,7 +13,7 @@ from functools import wraps
 # Import our models and utilities
 from models.user import User, db
 from models.document import Document
-from models.image import Image
+from models.image import ImageAnalysis
 from models.workflow import WorkflowModel
 from models.processing import ProcessingTask, Report
 from utils.pdf_processor import PDFProcessor
