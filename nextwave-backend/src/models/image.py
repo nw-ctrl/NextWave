@@ -2,7 +2,7 @@ from src.models.user import db
 from datetime import datetime
 import json
 
-class Image(db.Model):
+class ImageAnalysis(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
@@ -23,7 +23,7 @@ class Image(db.Model):
     analysis_results = db.relationship('ImageAnalysisResult', backref='image', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f'<Image {self.filename}>'
+        return f'<ImageAnalysis {self.filename}>'
 
     def set_metadata(self, metadata_dict):
         """Set image metadata as JSON"""
