@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   // API base URL
-  const API_BASE_URL = '/api'
+  const API_BASE_URL = 'https://nextwave-backend-xrgj.onrender.com/api'
 
   useEffect(() => {
     // Check for existing token on app load
