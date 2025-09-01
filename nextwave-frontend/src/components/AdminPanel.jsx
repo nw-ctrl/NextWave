@@ -10,9 +10,11 @@ import {
   BarChart3,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Mail
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/AuthContext"
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('overview')
@@ -42,6 +44,7 @@ const AdminPanel = () => {
   const tabs = [
     { id: 'overview', name: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
     { id: 'users', name: 'Users', icon: <Users className="h-4 w-4" /> },
+    { id: 'contacts', name: 'Contact Submissions', icon: <Mail className="h-4 w-4" /> },
     { id: 'system', name: 'System', icon: <Settings className="h-4 w-4" /> },
     { id: 'logs', name: 'Logs', icon: <Activity className="h-4 w-4" /> }
   ]
@@ -262,6 +265,86 @@ const AdminPanel = () => {
     </div>
   )
 
+  const renderContacts = () => {
+    const { apiCall } = useAuth();
+    const [contacts, setContacts] = useState([]);
+    const [loadingContacts, setLoadingContacts] = useState(true);
+    const [errorContacts, setErrorContacts] = useState(null);
+
+    useEffect(() => {
+      const fetchContacts = async () => {
+        try {
+          setLoadingContacts(true);
+          const response = await apiCall('/admin/contacts');
+          if (response.ok) {
+            const data = await response.json();
+            setContacts(data.contacts);
+          } else {
+            setErrorContacts('Failed to fetch contact submissions.');
+          }
+        } catch (error) {
+          setErrorContacts('Network error: ' + error.message);
+        } finally {
+          setLoadingContacts(false);
+        }
+      };
+      fetchContacts();
+    }, [apiCall]);
+
+    if (loadingContacts) {
+      return <div className="text-white">Loading contact submissions...</div>;
+    }
+
+    if (errorContacts) {
+      return <div className="text-red-400">Error: {errorContacts}</div>;
+    }
+
+    return (
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-white">Contact Submissions</h3>
+        <div className="admin-card p-6">
+          {contacts.length === 0 ? (
+            <p className="text-white/70">No contact submissions found.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left text-white/70 font-medium py-3">Name</th>
+                    <th className="text-left text-white/70 font-medium py-3">Email</th>
+                    <th className="text-left text-white/70 font-medium py-3">Subject</th>
+                    <th className="text-left text-white/70 font-medium py-3">Status</th>
+                    <th className="text-left text-white/70 font-medium py-3">Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.map((contact) => (
+                    <tr key={contact.id} className="border-b border-white/5">
+                      <td className="py-4 text-white">{contact.name}</td>
+                      <td className="py-4 text-white/80">{contact.email}</td>
+                      <td className="py-4 text-white/80">{contact.subject}</td>
+                      <td className="py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          contact.status === 'new' ? 'bg-blue-500/20 text-blue-400' :
+                          contact.status === 'in_progress' ? 'bg-yellow-500/20 text-yellow-400' :
+                          contact.status === 'completed' ? 'bg-green-500/20 text-green-400' :
+                          'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {contact.status}
+                        </span>
+                      </td>
+                      <td className="py-4 text-white/60">{new Date(contact.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -317,6 +400,7 @@ const AdminPanel = () => {
         >
           {activeTab === 'overview' && renderOverview()}
           {activeTab === 'users' && renderUsers()}
+          {activeTab === 'contacts' && renderContacts()}
           {activeTab === 'system' && renderSystem()}
           {activeTab === 'logs' && renderLogs()}
         </motion.div>

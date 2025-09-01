@@ -74,27 +74,45 @@ const Contact = () => {
     setSubmitStatus(null)
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // In a real application, you would send the data to your backend
-      console.log('Form submitted:', formData)
-      
-      setSubmitStatus('success')
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        service: '',
-        message: ''
-      })
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/contact`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            subject: `Contact from website - ${formData.service || 'General Inquiry'}`,
+            message: formData.message,
+            phone: formData.phone,
+            service_type: formData.service,
+          }),
+        }
+      )
+
+      if (response.ok) {
+        setSubmitStatus('success')
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          service: '',
+          message: '',
+        })
+      } else {
+        const errorData = await response.json()
+        console.error('Form submission error:', errorData)
+        setSubmitStatus('error')
+      }
     } catch (error) {
+      console.error('Network error during form submission:', error)
       setSubmitStatus('error')
     } finally {
       setIsSubmitting(false)
     }
   }
-
   return (
     <section id="contact" className="py-20 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
