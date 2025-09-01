@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from src.models.user import db, User
-from src.models.image import Image, ImageAnalysisResult
+from src.models.image import ImageAnalysis, ImageAnalysisResult
 from src.models.processing import ProcessingTask
 import os
 import uuid
