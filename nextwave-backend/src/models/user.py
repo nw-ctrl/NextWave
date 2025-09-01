@@ -22,8 +22,8 @@ class User(db.Model):
 
     # Relationships
     documents = db.relationship('Document', backref='owner', lazy=True, cascade='all, delete-orphan')
-    images = db.relationship('Image', backref='owner', lazy=True, cascade='all, delete-orphan')
-    workflows = db.relationship('Workflow', backref='owner', lazy=True, cascade='all, delete-orphan')
+    images = db.relationship('ImageAnalysis', backref='owner', lazy=True, cascade='all, delete-orphan')
+    workflows = db.relationship('WorkflowModel', backref='owner', lazy=True, cascade='all, delete-orphan')
     processing_tasks = db.relationship('ProcessingTask', backref='user', lazy=True, cascade='all, delete-orphan')
     reports = db.relationship('Report', backref='user', lazy=True, cascade='all, delete-orphan')
 

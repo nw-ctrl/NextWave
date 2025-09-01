@@ -11,21 +11,21 @@ import logging
 from functools import wraps
 
 # Import our models and utilities
-from models.user import User, db
-from models.document import Document
-from models.image import ImageAnalysis
-from models.workflow import WorkflowModel
-from models.processing import ProcessingTask, Report
-from utils.pdf_processor import PDFProcessor
-from utils.image_analyzer import ImageAnalyzer
-from utils.workflow_engine import WorkflowEngine
+from .models.user import User, db
+from .models.document import Document
+from .models.image import ImageAnalysis
+from .models.workflow import WorkflowModel
+from .models.processing import ProcessingTask, Report
+from .utils.pdf_processor import PDFProcessor
+from .utils.image_analyzer import ImageAnalyzer
+from .utils.workflow_engine_simple import WorkflowEngine
 
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'nextwave-secret-key-2024'
-app.config['JWT_SECRET_KEY'] = 'nextwave-jwt-secret-2024'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'nextwave-secret-key-2024')
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'nextwave-jwt-secret-2024')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///nextwave.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///nextwave.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max file size
@@ -142,7 +142,7 @@ def login():
             return jsonify({'error': 'Invalid credentials'}), 401
         
         # Update last login
-        user.last_login = datetime.now()
+        user.last_login = datetime.utcnow()
         db.session.commit()
         
         # Create access token
@@ -598,40 +598,43 @@ def download_report(report_id):
         return jsonify({'error': 'Failed to download report'}), 500
 
 # Initialize database and create sample data
-@app.before_first_request
+@app.before_request
 def create_tables():
-    db.create_all()
-    
-    # Create admin user if not exists
-    admin_user = User.query.filter_by(username='admin').first()
-    if not admin_user:
-        admin_user = User(
-            username='admin',
-            email='admin@nextwave.au',
-            password_hash=generate_password_hash('admin123'),
-            first_name='Admin',
-            last_name='User',
-            role='admin'
-        )
-        db.session.add(admin_user)
-    
-    # Create demo user if not exists
-    demo_user = User.query.filter_by(username='demo').first()
-    if not demo_user:
-        demo_user = User(
-            username='demo',
-            email='demo@nextwave.au',
-            password_hash=generate_password_hash('demo123'),
-            first_name='Demo',
-            last_name='User',
-            role='user'
-        )
-        db.session.add(demo_user)
-    
-    db.session.commit()
-    
-    # Create sample workflows
-    workflow_engine.create_sample_workflows()
+    if not hasattr(create_tables, 'already_run'):
+        db.create_all()
+        
+        # Create admin user if not exists
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = User(
+                username='admin',
+                email='admin@nextwave.au',
+                password_hash=generate_password_hash('admin123'),
+                first_name='Admin',
+                last_name='User',
+                role='admin'
+            )
+            db.session.add(admin_user)
+        
+        # Create demo user if not exists
+        demo_user = User.query.filter_by(username='demo').first()
+        if not demo_user:
+            demo_user = User(
+                username='demo',
+                email='demo@nextwave.au',
+                password_hash=generate_password_hash('demo123'),
+                first_name='Demo',
+                last_name='User',
+                role='user'
+            )
+            db.session.add(demo_user)
+        
+        db.session.commit()
+        
+        # Create sample workflows
+        workflow_engine.create_sample_workflows()
+        
+        create_tables.already_run = True
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

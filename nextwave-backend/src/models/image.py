@@ -1,4 +1,4 @@
-from src.models.user import db
+from .user import db
 from datetime import datetime
 import json
 
@@ -56,7 +56,7 @@ class ImageAnalysis(db.Model):
 
 class ImageAnalysisResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    image_id = db.Column(db.Integer, db.ForeignKey('image.id'), nullable=False)
+    image_id = db.Column(db.Integer, db.ForeignKey('image_analysis.id'), nullable=False)
     description = db.Column(db.Text)
     characteristics = db.Column(db.Text)  # JSON string
     confidence_score = db.Column(db.Numeric(3, 2))

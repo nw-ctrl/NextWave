@@ -1,6 +1,48 @@
-from src.models.user import db
+from .user import db
 from datetime import datetime
 import json
+
+class WorkflowModel(db.Model):
+    __tablename__ = 'workflow_model'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    workflow_id = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    definition = db.Column(db.Text, nullable=False)  # JSON string
+    status = db.Column(db.Enum('draft', 'active', 'paused', 'completed', name='workflow_model_status'), default='draft')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_run = db.Column(db.DateTime)
+    run_count = db.Column(db.Integer, default=0)
+
+    def __repr__(self):
+        return f'<WorkflowModel {self.name}>'
+
+    def set_definition(self, definition_dict):
+        """Set workflow definition as JSON"""
+        self.definition = json.dumps(definition_dict)
+
+    def get_definition(self):
+        """Get workflow definition from JSON"""
+        if self.definition:
+            return json.loads(self.definition)
+        return {}
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'workflow_id': self.workflow_id,
+            'name': self.name,
+            'description': self.description,
+            'definition': self.get_definition(),
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'last_run': self.last_run.isoformat() if self.last_run else None,
+            'run_count': self.run_count
+        }
 
 class Workflow(db.Model):
     id = db.Column(db.Integer, primary_key=True)

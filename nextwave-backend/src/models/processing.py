@@ -1,13 +1,15 @@
-from src.models.user import db
+from .user import db
 from datetime import datetime
 import json
 
 class ProcessingTask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    task_type = db.Column(db.Enum('pdf_edit', 'pdf_to_visio', 'visio_to_pdf', 'visio_edit', 'pdf_to_word', 'image_analysis', name='task_types'), nullable=False)
+    task_type = db.Column(db.Enum('pdf_edit', 'pdf_to_visio', 'visio_to_pdf', 'visio_edit', 'pdf_to_word', 'image_analysis', 'document_upload', 'document_processing', name='task_types'), nullable=False)
     source_file_id = db.Column(db.Integer)
     target_file_id = db.Column(db.Integer)
+    input_data = db.Column(db.Text)  # JSON string
+    output_data = db.Column(db.Text)  # JSON string
     parameters = db.Column(db.Text)  # JSON string
     status = db.Column(db.Enum('pending', 'processing', 'completed', 'failed', name='task_status'), default='pending')
     progress = db.Column(db.Integer, default=0)
@@ -28,6 +30,26 @@ class ProcessingTask(db.Model):
         """Get task parameters from JSON"""
         if self.parameters:
             return json.loads(self.parameters)
+        return {}
+
+    def set_input_data(self, input_dict):
+        """Set input data as JSON"""
+        self.input_data = json.dumps(input_dict)
+
+    def get_input_data(self):
+        """Get input data from JSON"""
+        if self.input_data:
+            return json.loads(self.input_data)
+        return {}
+
+    def set_output_data(self, output_dict):
+        """Set output data as JSON"""
+        self.output_data = json.dumps(output_dict)
+
+    def get_output_data(self):
+        """Get output data from JSON"""
+        if self.output_data:
+            return json.loads(self.output_data)
         return {}
 
     def set_result_data(self, result_dict):
@@ -60,8 +82,10 @@ class ProcessingTask(db.Model):
 class Report(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     report_type = db.Column(db.String(100), nullable=False)
+    generated_for_id = db.Column(db.Integer)
     template_config = db.Column(db.Text)  # JSON string
     source_data = db.Column(db.Text)  # JSON string
     file_path = db.Column(db.String(500))

@@ -1,5 +1,6 @@
 import os
 import io
+import time
 import PyPDF2
 from PIL import Image
 from reportlab.pdfgen import canvas

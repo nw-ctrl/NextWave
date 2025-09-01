@@ -1,4 +1,4 @@
-from src.models.user import db
+from .user import db
 from datetime import datetime
 import json
 
@@ -10,8 +10,9 @@ class Document(db.Model):
     file_path = db.Column(db.String(500), nullable=False)
     file_size = db.Column(db.Integer, nullable=False)
     mime_type = db.Column(db.String(100), nullable=False)
-    document_type = db.Column(db.Enum('pdf', 'word', 'visio', 'other', name='document_types'), nullable=False)
+    document_type = db.Column(db.Enum('pdf', 'word', 'visio', 'other', name='document_types'), default='other')
     status = db.Column(db.Enum('uploaded', 'processing', 'completed', 'error', name='document_status'), default='uploaded')
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     processed_at = db.Column(db.DateTime)
@@ -45,6 +46,7 @@ class Document(db.Model):
             'mime_type': self.mime_type,
             'document_type': self.document_type,
             'status': self.status,
+            'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'processed_at': self.processed_at.isoformat() if self.processed_at else None,
